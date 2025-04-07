@@ -1,75 +1,62 @@
-"use client"; // Essential: This component uses hooks and runs client-side
+// packages/analytics/src/provider.tsx
+"use client"; // Essential
 
-import React, { useEffect, ReactNode } from "react";
-import { usePathname } from "next/navigation"; // Use App Router hook
+import React, { useEffect, ReactNode, JSX } from "react";
+import { usePathname } from "next/navigation";
 import { useReportWebVitals } from "next/web-vitals";
-import { type NextWebVitalsMetric } from "next/app";
+import { NextWebVitalsMetric } from "next/app";
 import {
   setConfig,
   internalTrackPageView,
   internalTrackWebVital,
-} from "./core"; // Import internal functions
+} from "./core";
 
 export interface AnalyticsProviderProps {
-  domain: string;
+  /** A unique identifier for your site or project provided by Zeitgg Analytics. */
+  siteId: string; // Changed from 'domain'
   /** Optional: Set to true to disable automatic page view tracking. Defaults to false. */
   disableAutoPageView?: boolean;
   /** Optional: Enables verbose logging. Defaults to true if NODE_ENV is 'development'. */
   debug?: boolean;
-  /** Optional: Specify scheme (http or https). Defaults to 'https'. */
-  scheme?: "http" | "https";
-  /** Optional: Specify a custom API path. Defaults to '/api/track'. */
-  apiPath?: string;
   children: ReactNode;
 }
 
 export function AnalyticsProvider({
-  domain,
+  siteId, // Changed from 'domain'
   disableAutoPageView = false,
-  debug = process.env.NODE_ENV === "development", // Default debug based on env
-  scheme = "https",
-  apiPath = "/api/track",
+  debug = process.env.NODE_ENV === "development",
   children,
 }: AnalyticsProviderProps): JSX.Element {
-  const pathname = usePathname(); // Get current path
+  const pathname = usePathname();
 
-  // Effect to initialize/update the internal config when props change
+  // Effect to initialize/update the internal config
   useEffect(() => {
-    if (!domain) {
-      if (debug) {
+    // Validate the siteId prop
+    if (!siteId || typeof siteId !== "string" || siteId.trim() === "") {
+      if (debug ?? process.env.NODE_ENV === "development") {
+        // Check debug flag carefully
         console.warn(
-          "[@zeitgg/analytics:Provider] 'domain' prop is missing or empty. Analytics disabled."
+          "[@zeitgg/analytics:Provider] 'siteId' prop is missing or invalid. Analytics disabled."
         );
       }
-      // Potentially call setConfig with null or a disabled state if needed
+      // Ensure config is reset if siteId becomes invalid
+      setConfig({ siteId: "", debug: debug ?? false }); // Pass empty siteId to signal disabled state
       return;
     }
 
-    // Construct the full API endpoint URL
-    // Handle potential trailing slash in domain and leading slash in apiPath
-    const normalizedDomain = domain.replace(/\/$/, "");
-    const normalizedApiPath = apiPath.startsWith("/") ? apiPath : `/${apiPath}`;
-    const endpoint = `${scheme}://${normalizedDomain}${normalizedApiPath}`;
+    // Set the configuration using the provided siteId
+    setConfig({ siteId, debug });
+  }, [siteId, debug]); // Re-run if siteId or debug prop changes
 
-    setConfig({ apiEndpoint: endpoint, debug });
-  }, [domain, debug, scheme, apiPath]); // Re-run if config props change
-
-  // Effect for automatic page view tracking
   useEffect(() => {
-    // Track page view when pathname changes, if enabled and configured
     if (!disableAutoPageView && pathname) {
-      // internalTrackPageView handles the isConfigured check internally
       internalTrackPageView(pathname);
     }
-  }, [pathname, disableAutoPageView]); // Re-run when pathname changes
+  }, [pathname, disableAutoPageView]);
 
-  // Hook for Web Vitals reporting
   useReportWebVitals((metric: NextWebVitalsMetric) => {
-    // internalTrackWebVital handles the isConfigured check internally
     internalTrackWebVital(metric);
   });
 
-  // This provider's main job is to configure the core module via useEffects.
-  // It doesn't need to provide a React Context for the global 'track' function.
-  return <>{children}</>; // Render children directly
+  return <>{children}</>;
 }
