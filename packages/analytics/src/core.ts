@@ -1,64 +1,66 @@
 import { type NextWebVitalsMetric } from "next/app";
 
+const CENTRAL_API_ENDPOINT = "https://analytics.zeit.gg/api/track";
+
 interface InternalConfig {
-  apiEndpoint: string;
+  siteId: string; // Identifier for the user's site/project
   debug: boolean;
 }
 
 let config: InternalConfig | null = null;
 
 /**
- * Internal function to set the configuration
- * Called by the AnalyticsProvider.
+ * Internal function to set the configuration. Called by AnalyticsProvider.
  */
 export function setConfig(newConfig: InternalConfig): void {
+  // Check if config actually changed to avoid redundant logs/work
   if (
-    config?.apiEndpoint === newConfig.apiEndpoint &&
+    config?.siteId === newConfig.siteId &&
     config?.debug === newConfig.debug
   ) {
-    // Avoid unnecessary logging if config hasn't changed
     return;
   }
   config = newConfig;
   if (config.debug) {
     console.log(
-      "[@zeitgg/analytics:core] Configured. Endpoint:",
-      config.apiEndpoint,
+      "[@zeitgg/analytics:core] Configured. Site ID:",
+      config.siteId,
       "Debug:",
-      config.debug
+      config.debug,
+      "Endpoint:",
+      CENTRAL_API_ENDPOINT // Log the fixed endpoint
     );
   }
 }
 
 /**
- * Internal function to check if analytics is configured and ready.
+ * Internal function to check if analytics is configured.
  */
 export function isConfigured(): boolean {
-  return config != null;
+  return config !== null && !!config.siteId; // Ensure siteId is present
 }
 
 /**
- * Internal function to send data to the configured endpoint
+ * Internal function to send data to the CENTRAL endpoint.
  */
 async function sendData(
   type: "pageview" | "event" | "webvital",
   payload: unknown
 ): Promise<void> {
   if (!config) {
-    // Should not happen if isConfigured() is checked, but acts as a safeguard
-    console.warn(
-      "[@zeitgg/analytics:core] Attempted to send data before configuration."
-    );
+    // Guard against calls before config is set
     return;
   }
 
   const body = JSON.stringify({
+    siteId: config.siteId, // <<< Include the siteId in the payload
     type,
     payload,
     meta: {
       timestamp: new Date().toISOString(),
       url: typeof window !== "undefined" ? window.location.pathname : "",
       hostname: typeof window !== "undefined" ? window.location.hostname : "",
+      // Add other anonymous meta if needed (e.g., language, screen size category)
     },
   });
 
@@ -67,19 +69,16 @@ async function sendData(
   }
 
   try {
+    // Use sendBeacon first
     if (typeof navigator !== "undefined" && navigator.sendBeacon) {
-      const sent = navigator.sendBeacon(config.apiEndpoint, body);
-      if (!sent && config.debug) {
-        console.warn("[@zeitgg/analytics:core] sendBeacon returned false.");
-        // Consider fetch fallback here if sendBeacon fails immediately?
-      }
+      navigator.sendBeacon(CENTRAL_API_ENDPOINT, body);
     } else {
-      // Fallback to fetch for browsers without sendBeacon
-      await fetch(config.apiEndpoint, {
+      // Fallback to fetch
+      await fetch(CENTRAL_API_ENDPOINT, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body,
-        keepalive: true, // Important for fetch on unload
+        keepalive: true,
       });
     }
   } catch (error) {
@@ -87,16 +86,16 @@ async function sendData(
   }
 }
 
-// --- Internal Tracking Function ---
+// --- Internal Tracking Functions (no change needed in their logic) ---
+
 export function internalTrackEvent(
   name: string,
   data?: Record<string, unknown>
 ): void {
   if (!isConfigured()) {
     if (config?.debug) {
-      // Check debug flag even if not fully configured
       console.warn(
-        `[@zeitgg/analytics:core] Analytics not configured. Event "${name}" dropped.`,
+        `[@zeitgg/analytics:core] Analytics not configured (missing siteId?). Event "${name}" dropped.`,
         data
       );
     }
@@ -112,17 +111,17 @@ export function internalTrackEvent(
 }
 
 export function internalTrackPageView(pathname: string): void {
-  if (!isConfigured()) return; // Silently drop if not configured
+  if (!isConfigured()) return;
   if (config?.debug) {
     console.log(
       `[@zeitgg/analytics:core] Tracking page view for "${pathname}"`
     );
   }
-  sendData("pageview", { url: pathname }); // Send only pathname
+  sendData("pageview", { url: pathname });
 }
 
 export function internalTrackWebVital(metric: NextWebVitalsMetric): void {
-  if (!isConfigured()) return; // Silently drop if not configured
+  if (!isConfigured()) return;
   if (config?.debug) {
     console.log(
       `[@zeitgg/analytics:core] Tracking web vital ${metric.name}`,
