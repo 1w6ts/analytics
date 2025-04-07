@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma"; // Import your Prisma client instance
 import { AnalyticsEvent } from "@prisma/client"; // Import the type
+export const dynamic = "force-dynamic";
 
 // Define CORS headers - Adjust origin for production!
 const corsHeaders = {
