@@ -1,0 +1,45 @@
+{
+  "name": "@zeitgg/analytics",
+  "version": "0.2.0",
+  "description": "Analytics library for Next.js App Router",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "next": ">=13.4.0",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "keywords": [
+    "nextjs",
+    "analytics",
+    "web vitals",
+    "tracking",
+    "app router"
+  ],
+  "author": "Jacob <your-email@example.com>",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeitgg/analytics.git",
+    "directory": "packages/analytics"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.1",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3"
+  }
+}
