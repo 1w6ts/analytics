@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma"; // Import your Prisma client instance
 import { AnalyticsEvent } from "@prisma/client"; // Import the type
 export const dynamic = "force-dynamic";
+import { Params } from "next/dist/server/request/params";
 
 // Define CORS headers - Adjust origin for production!
 const corsHeaders = {
@@ -26,9 +27,11 @@ export interface AnalyticsDataResponse {
 // GET handler to fetch analytics for a specific siteId
 export async function GET(
   request: NextRequest,
-  context: { params: { siteId: string } } // The second argument is 'context' containing 'params'
+  context: { params: Params } // The second argument is 'context' containing 'params'
 ): Promise<NextResponse> {
-  const siteId = context.params.siteId;
+  const siteId = Array.isArray(context.params.siteId)
+    ? context.params.siteId[0]
+    : context.params.siteId;
 
   // --- 🔒 Authentication/Authorization Placeholder ---
   // In a real application, you MUST protect this endpoint.
