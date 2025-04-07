@@ -1,0 +1,43 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventType {
+  PAGEVIEW
+  EVENT
+  WEBVITAL
+}
+
+model AnalyticsEvent {
+  id        String    @id @default(cuid())
+  timestamp DateTime  @default(now())
+  type      EventType
+
+  siteId String
+
+  clientTimestamp DateTime @map("client_timestamp")
+  url             String?
+  hostname        String?
+
+  pageUrl String?
+
+  eventName String?
+  eventData Json?
+
+  metricName  String?
+  metricValue Float?
+  metricId    String?
+  metricLabel String?
+
+  @@index([siteId])
+  @@index([timestamp])
+  @@index([type])
+  @@index([hostname])
+  @@index([eventName])
+  @@index([metricName])
+}
