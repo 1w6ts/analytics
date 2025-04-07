@@ -1,0 +1,16 @@
+{
+  "name": "zeit-analytics",
+  "version": "1.0.0",
+  "main": "index.js",
+  "keywords": [],
+  "author": "Jaocb <jacob@zeit.gg>",
+  "license": "ISC",
+  "description": "Monorepo for @zeitgg/analytics package and example app",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ]
+}
