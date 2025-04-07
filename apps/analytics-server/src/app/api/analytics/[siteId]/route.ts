@@ -26,12 +26,10 @@ export interface AnalyticsDataResponse {
 
 // GET handler to fetch analytics for a specific siteId
 export async function GET(
-  request: NextRequest,
-  context: { params: Params } // The second argument is 'context' containing 'params'
+  context: { params: { siteId: string } }, // The second argument is 'context' containing 'params'
+  request: NextRequest
 ): Promise<NextResponse> {
-  const siteId = Array.isArray(context.params.siteId)
-    ? context.params.siteId[0]
-    : context.params.siteId;
+  const siteId = context.params.siteId;
 
   // --- 🔒 Authentication/Authorization Placeholder ---
   // In a real application, you MUST protect this endpoint.
