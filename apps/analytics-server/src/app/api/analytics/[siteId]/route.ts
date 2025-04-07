@@ -25,8 +25,8 @@ export interface AnalyticsDataResponse {
 // GET handler to fetch analytics for a specific siteId
 export async function GET(
   request: NextRequest,
-  context: { params: { siteId: string } }
-) {
+  context: { params: { siteId: string } } // The second argument is 'context' containing 'params'
+): Promise<NextResponse> {
   const siteId = context.params.siteId;
 
   // --- 🔒 Authentication/Authorization Placeholder ---
